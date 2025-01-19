@@ -1,0 +1,57 @@
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <zlib.h>
+
+using namespace std;
+
+// Function to compress data using zlib
+bool compressData(const vector<unsigned char>& input, vector<unsigned char>& output) {
+    uLongf compressedSize = compressBound(input.size());
+    output.resize(compressedSize);
+
+    int result = compress(output.data(), &compressedSize, input.data(), input.size());
+    if (result != Z_OK) {
+        cerr << "Error: Compression failed with error code " << result << endl;
+        return false;
+    }
+
+    output.resize(compressedSize); // Resize to actual compressed size
+    return true;
+}
+
+int main() {
+    string inputFile = "input.txt";
+    string outputFile = "compressed.bin";
+
+    // Read the input file
+    ifstream inFile(inputFile, ios::binary);
+    if (!inFile.is_open()) {
+        cerr << "Error: Could not open input file: " << inputFile << endl;
+        return 1;
+    }
+
+    vector<unsigned char> inputData((istreambuf_iterator<char>(inFile)), istreambuf_iterator<char>());
+    inFile.close();
+    cout << "Read " << inputData.size() << " bytes from " << inputFile << endl;
+
+    // Compress the data
+    vector<unsigned char> compressedData;
+    if (!compressData(inputData, compressedData)) {
+        cerr << "Error: Compression failed." << endl;
+        return 1;
+    }
+    cout << "Compressed data size: " << compressedData.size() << " bytes." << endl;
+
+    // Write the compressed data to the output file
+    ofstream outFile(outputFile, ios::binary);
+    if (!outFile.is_open()) {
+        cerr << "Error: Could not open output file: " << outputFile << endl;
+        return 1;
+    }
+    outFile.write(reinterpret_cast<const char*>(compressedData.data()), compressedData.size());
+    outFile.close();
+
+    cout << "Compressed data written to " << outputFile << endl;
+    return 0;
+}
